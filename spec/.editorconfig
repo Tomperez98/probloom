@@ -1,0 +1,27 @@
+[*.cs]
+csharp_style_prefer_extended_property_pattern = true
+csharp_style_prefer_implicitly_typed_lambda_expression = true
+dotnet_diagnostic.CA1854.severity = error
+dotnet_diagnostic.CA1859.severity = none
+dotnet_diagnostic.CA1862.severity = error
+dotnet_diagnostic.IDE0001.severity = none
+dotnet_diagnostic.IDE0028.severity = none
+dotnet_diagnostic.IDE0047.severity = error
+dotnet_diagnostic.IDE0051.severity = error
+dotnet_diagnostic.IDE0059.severity = error
+dotnet_diagnostic.IDE0130.severity = none
+dotnet_diagnostic.IDE0170.severity = error
+dotnet_diagnostic.IDE0200.severity = error
+dotnet_diagnostic.IDE0290.severity = error
+dotnet_diagnostic.IDE0300.severity = error
+dotnet_diagnostic.IDE0301.severity = error
+dotnet_diagnostic.IDE0305.severity = error
+dotnet_diagnostic.IDE0330.severity = error
+dotnet_diagnostic.IDE0350.severity = error
+dotnet_diagnostic.NUnit2045.severity = error
+dotnet_diagnostic.NUnit2046.severity = error
+dotnet_diagnostic.NUnit2056.severity = error
+dotnet_diagnostic.NUnit4002.severity = error
+dotnet_diagnostic.SYSLIB1045.severity = error
+dotnet_style_namespace_match_folder = false
+dotnet_style_prefer_collection_expression = true
