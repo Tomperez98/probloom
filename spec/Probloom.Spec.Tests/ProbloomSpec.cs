@@ -10,7 +10,13 @@ public sealed class ProbloomSpec : Spec<FilterState>
 
         Operation<string, bool>("Add", (element, _) =>
             Expect.That<bool>(r => r, $"Insert '{element}' → accepted")
-                  .ThenState<FilterState>(next => next.Inserted[element] = true));
+                  .ThenState<FilterState>(next =>
+                  {
+                      next.Inserted[element] = true;
+                      Invariant.Assert(
+                          next.Inserted.ContainsKey(element),
+                          "Add must record the element");
+                  }));
 
         Operation<string, bool>("Contains", (element, state) =>
         {
@@ -40,6 +46,12 @@ public sealed class ProbloomSpec : Spec<FilterState>
             Expect.That<bool>(
                     r => r,
                     "Clear → accepted; every membership query now returns false")
-                .ThenState<FilterState>(next => next.Inserted.Clear()));
+                .ThenState<FilterState>(next =>
+                {
+                    next.Inserted.Clear();
+                    Invariant.Assert(
+                        next.Inserted.Count == 0,
+                        "Clear must empty the abstract set");
+                }));
     }
 }

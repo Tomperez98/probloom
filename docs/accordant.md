@@ -75,6 +75,44 @@ while empty and `true` after any insertion. It satisfies every per-call rule,
 so the spec passes it. The statistical test measures a 100% false-positive rate
 and rejects it. The showcase is more convincing because it admits that boundary.
 
+## Invariants
+
+The spec asserts two transition invariants with `Invariant.Assert`:
+
+- `Add` records the element in the abstract set.
+- `Clear` leaves the abstract set empty.
+
+They run during `GenerateTests`, before any generated case is executed. They
+check the **spec's** transition, not the filter's bits; the system is still
+judged by the outcome predicates.
+
+This table maps where each property is checked. It is a map, not a second
+contract; the outcome strings in `ProbloomSpec.cs` remain the contract.
+
+| Invariant | Enforced by | Checked by |
+| --- | --- | --- |
+| No false negatives | `Contains` inserted branch | spec; `test_inserted_elements_never_disappear`; concurrency replay |
+| Empty filter answers false | `Contains` empty branch | spec; `test_empty_filter_answers_false` |
+| Add records the element | `Invariant.Assert` in `Add` | generation; `test_insertion_is_idempotent` |
+| Clear empties the set | `Invariant.Assert` in `Clear` | generation; manual clear case; `faulty_clear` |
+| Query does not mutate | `.SameState()` on `Contains` | `test_contains_does_not_mutate` |
+| Sizing: `m >= 1`, `k >= 1`, byte coverage | constructor assertions | `test_sizing_matches_the_textbook_formula` |
+| `0 <= set_bits <= bit_count` | `set_bits` assertion | `test_set_bits_stays_within_the_bit_array` |
+| Deterministic bytes; no normalization | `_indices` | cross-process determinism test; no-normalization test; ADR-0002 |
+| Linearizability | per-instance lock + `AllowsConcurrent` | concurrency replay; threaded stress tests; ADR-0003/0004 |
+| False-positive rate | not an invariant | `tests/test_statistics.py`; ADR-0001 |
+
+Two distinctions matter:
+
+- **No false negatives** is a per-call outcome, not a state invariant. The
+  spec's abstract state cannot observe the filter's bits; the `Contains` branch
+  is what makes the promise.
+- **The false-positive rate** is a statistical promise, not an invariant. It
+  belongs to the seeded statistical test, not the spec.
+
+The implementation assertions are fail-fast checks on the filter's own
+construction and diagnostics. They do not replace the spec's judgments.
+
 ## How the sequential suite is generated
 
 The inputs are `Add alice`, `Add bob`, `Add ghost`, `Contains alice`,

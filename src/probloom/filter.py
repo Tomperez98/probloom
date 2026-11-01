@@ -45,6 +45,11 @@ class BloomFilter:
         )
         self._hash_count = max(1, round((self._bit_count / capacity) * math.log(2)))
         self._byte_count = (self._bit_count + 7) // 8
+        assert self._bit_count >= 1, "bit_count must be positive"
+        assert self._hash_count >= 1, "hash_count must be positive"
+        assert (self._byte_count - 1) * 8 < self._bit_count <= self._byte_count * 8, (
+            "byte_count must exactly cover the bit array"
+        )
         self._bits = bytearray(self._byte_count)
         self._lock = threading.Lock()
 
@@ -74,7 +79,9 @@ class BloomFilter:
     def set_bits(self) -> int:
         """The number of bits currently set. Useful for diagnostics."""
         with self._lock:
-            return sum(byte.bit_count() for byte in self._bits)
+            count = sum(byte.bit_count() for byte in self._bits)
+        assert 0 <= count <= self._bit_count, "set_bits must stay within the bit array"
+        return count
 
     def _indices(self, data: bytes) -> tuple[int, ...]:
         digest = hashlib.sha256(data).digest()

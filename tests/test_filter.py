@@ -46,6 +46,8 @@ def test_sizing_matches_the_textbook_formula() -> None:
     assert f.capacity == 1000
     assert f.error_rate == 0.01
     assert f.seed == 0
+    assert f.bit_count >= 1
+    assert f.hash_count >= 1
 
 
 def test_empty_filter_answers_false() -> None:
@@ -107,6 +109,14 @@ def test_no_unicode_normalization() -> None:
     assert f.contains(composed)
     assert f.contains(composed.encode("utf-8"))
     assert not f.contains(decomposed)
+
+
+def test_set_bits_stays_within_the_bit_array() -> None:
+    f = BloomFilter(1000, 0.01)
+    for i in range(2000):
+        f.add(f"element-{i}")
+
+    assert 0 <= f.set_bits <= f.bit_count
 
 
 def test_contains_does_not_mutate() -> None:

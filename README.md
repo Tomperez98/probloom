@@ -86,6 +86,8 @@ than in the binding.
 Start with [`docs/accordant.md`](docs/accordant.md). It walks through:
 
 - the spec's outcome strings as the contract in words;
+- the invariant map: what the spec asserts, what tests check, and what is
+  deliberately not an invariant;
 - why the spec models the abstract inserted-set and never the bit array;
 - the manual clear-cycle case the built-in generator cannot reach;
 - the three seeded bugs the spec rejects;

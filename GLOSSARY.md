@@ -66,6 +66,10 @@ _Avoid_: model, mock, oracle (when naming the spec itself)
 One response the spec allows for a request in a state, with its state step. Its explanation reads `"<situation> → <outcome>"` and is the contract in words.
 _Avoid_: assertion, expected value
 
+**Invariant**:
+A property that must hold before and after every state transition. The spec checks it with `Invariant.Assert` inside `ThenState`.
+_Avoid_: assertion, property
+
 **Binding**:
 The code that turns an operation into a call on the Python library. Only the binding changes between transports.
 _Avoid_: client, adapter

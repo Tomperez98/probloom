@@ -167,7 +167,9 @@ public sealed class ConcurrencySpecTests
             var traces = JsonSerializer.Deserialize<TraceFile>(
                 File.ReadAllText(tracesPath), JsonOptions)!;
             Assert.Equal(cases.Count, traces.Cases.Count);
-            Assert.Contains(traces.Cases, trace => trace.Segments.Any(segment => segment.Count > 1));
+            Assert.All(
+                traces.Cases,
+                trace => Assert.Contains(trace.Segments, segment => segment.Count > 1));
             foreach (var trace in traces.Cases)
             {
                 Replay(spec, trace);
