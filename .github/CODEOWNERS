@@ -1,0 +1,10 @@
+# Default owner for everything in this repository.
+* @Tomperez98
+
+# CI and contribution plumbing: changes here change the rules for everyone.
+/.github/ @Tomperez98
+/scripts/ci @Tomperez98
+
+# The spec is the contract; changes need the owner's eyes.
+/spec/ @Tomperez98
+/docs/adr/ @Tomperez98
