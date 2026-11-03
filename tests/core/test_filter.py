@@ -163,6 +163,34 @@ def test_digest_seam_pins_the_derived_positions() -> None:
     assert bloom.set_bits == len(expected)
 
 
+def test_bit_pattern_matches_double_hashing() -> None:
+    bit_count = 0
+
+    def digest(data: bytes) -> bytes:
+        # Probe elements choose one index and a zero stride, so membership
+        # answers whether exactly that bit is set.
+        if data.startswith(b"\x00probe:"):
+            index = int.from_bytes(data[7:], "big")
+            return index.to_bytes(8, "big") + bit_count.to_bytes(8, "big")
+        return hashlib.sha256(data).digest()
+
+    bloom = BloomFilter(1000, 0.01, digest=digest)
+    bit_count = bloom.bit_count
+    bloom.add("alice")
+
+    digest_bytes = hashlib.sha256(b"alice").digest()
+    h1 = int.from_bytes(digest_bytes[:8], "big") ^ bloom.seed
+    h2 = (int.from_bytes(digest_bytes[8:16], "big") ^ bloom.seed) or 1
+    expected = {(h1 + i * h2) % bloom.bit_count for i in range(bloom.hash_count)}
+    actual = {
+        index
+        for index in range(bloom.bit_count)
+        if bloom.contains(b"\x00probe:" + index.to_bytes(8, "big"))
+    }
+
+    assert actual == expected
+
+
 def test_digest_seam_controls_the_bit_pattern() -> None:
     def fixed_digest(_data: bytes) -> bytes:
         return bytes(range(16)) + bytes(16)

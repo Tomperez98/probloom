@@ -103,7 +103,7 @@ contract; the outcome strings in `ProbloomSpec.cs` remain the contract.
 | Query does not mutate | `.SameState()` on `Contains` | `test_contains_does_not_mutate` |
 | Sizing: `m >= 1`, `k >= 1`, byte coverage | constructor assertions | `test_sizing_matches_the_textbook_formula` |
 | `0 <= set_bits <= bit_count` | `set_bits` assertion | `test_set_bits_stays_within_the_bit_array` |
-| Deterministic bytes; no normalization | `_indices` | cross-process determinism test; no-normalization test; snapshot test; ADR-0002 |
+| Deterministic bytes; no normalization | `_as_bytes` + digest seam | cross-process determinism test; no-normalization test; snapshot test; ADR-0002 |
 | Linearizability | per-instance lock + `AllowsConcurrent` | concurrency replay; threaded stress tests; ADR-0003/0004 |
 | False-positive rate | not an invariant | `tests/core/test_statistics.py`; ADR-0001 |
 

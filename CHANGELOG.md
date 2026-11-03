@@ -8,6 +8,11 @@ All notable changes to this project are documented here. The format follows
 
 ### Changed
 
+- `add` and `contains` derive the k bit positions incrementally instead of
+  allocating a tuple and taking a big-int modulo per position; `contains`
+  stops at the first unset bit. `set_bits` counts with `int.bit_count`, and
+  `clear` allocates its empty array outside the lock. Bit patterns are
+  unchanged.
 - The published wheel now contains only the core filter and declares no
   runtime dependencies. The NDJSON harness, seeded bugs, concurrency runner,
   and Accordant spec moved under `tools/` and are development-only.
