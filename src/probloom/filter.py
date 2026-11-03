@@ -4,6 +4,7 @@ from __future__ import annotations
 
 import hashlib
 import math
+import struct
 import threading
 from collections.abc import Callable
 
@@ -12,6 +13,9 @@ type DigestFunction = Callable[[bytes], bytes]
 
 _SEED = 0
 _MIN_DIGEST_BYTES = 16
+# Two big-endian unsigned 64-bit words: the same halves as digest[:8] and
+# digest[8:16], without the intermediate slices.
+_UNPACK_DIGEST = struct.Struct(">QQ").unpack_from
 
 
 def _sha256_digest(data: bytes) -> bytes:
@@ -101,39 +105,60 @@ class BloomFilter:
     def set_bits(self) -> int:
         """The number of bits currently set. Useful for diagnostics."""
         with self._lock:
-            count = sum(byte.bit_count() for byte in self._bits)
+            count = int.from_bytes(self._bits, "big").bit_count()
         assert 0 <= count <= self._bit_count, "set_bits must stay within the bit array"
         return count
 
-    def _indices(self, data: bytes) -> tuple[int, ...]:
+    def _start_and_stride(self, data: bytes) -> tuple[int, int]:
+        """Return the first index and the stride between the k positions.
+
+        This is the incremental form of the documented ``(h1 + i*h2) % m``
+        derivation: start at ``h1 % m`` and add ``h2 % m``, subtracting ``m``
+        when the index wraps. It produces the same positions without a big-int
+        multiply and modulo per position.
+        """
         digest = self._digest(data)
         if len(digest) < _MIN_DIGEST_BYTES:
             raise ValueError(
                 f"digest must return at least {_MIN_DIGEST_BYTES} bytes, got {len(digest)}"
             )
-        h1 = int.from_bytes(digest[:8], "big") ^ self._seed
-        h2 = (int.from_bytes(digest[8:16], "big") ^ self._seed) or 1
-        return tuple((h1 + i * h2) % self._bit_count for i in range(self._hash_count))
+        h1, h2 = _UNPACK_DIGEST(digest)
+        h1 ^= self._seed
+        h2 = (h2 ^ self._seed) or 1
+        bit_count = self._bit_count
+        return h1 % bit_count, h2 % bit_count
 
     def add(self, value: Element) -> None:
         """Insert an element. Insertion is idempotent."""
-        indices = self._indices(_as_bytes(value))
+        index, stride = self._start_and_stride(_as_bytes(value))
+        bit_count = self._bit_count
         with self._lock:
             bits = self._bits
-            for index in indices:
+            for _ in range(self._hash_count):
                 bits[index >> 3] |= 1 << (index & 7)
+                index += stride
+                if index >= bit_count:
+                    index -= bit_count
 
     def contains(self, value: Element) -> bool:
         """Return false only when the element was definitely not inserted."""
-        indices = self._indices(_as_bytes(value))
+        index, stride = self._start_and_stride(_as_bytes(value))
+        bit_count = self._bit_count
         with self._lock:
             bits = self._bits
-            return all(bits[index >> 3] & (1 << (index & 7)) for index in indices)
+            for _ in range(self._hash_count):
+                if not bits[index >> 3] & (1 << (index & 7)):
+                    return False
+                index += stride
+                if index >= bit_count:
+                    index -= bit_count
+            return True
 
     def clear(self) -> None:
         """Return the filter to the empty state."""
+        empty = bytearray(self._byte_count)
         with self._lock:
-            self._bits = bytearray(self._byte_count)
+            self._bits = empty
 
     def __contains__(self, value: Element) -> bool:
         """Support ``value in filter`` as a membership query."""
