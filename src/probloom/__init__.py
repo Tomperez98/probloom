@@ -2,6 +2,13 @@
 
 from __future__ import annotations
 
-from .filter import BloomFilter, Element
+from importlib.metadata import PackageNotFoundError, version
 
-__all__ = ["BloomFilter", "Element"]
+from .filter import BloomFilter, DigestFunction, Element
+
+try:
+    __version__ = version("probloom")
+except PackageNotFoundError:  # pragma: no cover - uninstalled source checkout
+    __version__ = "0.0.0.dev0"
+
+__all__ = ["BloomFilter", "DigestFunction", "Element", "__version__"]

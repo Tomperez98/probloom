@@ -5,10 +5,17 @@ from __future__ import annotations
 import hashlib
 import math
 import threading
+from collections.abc import Callable
 
 type Element = str | bytes
+type DigestFunction = Callable[[bytes], bytes]
 
 _SEED = 0
+_MIN_DIGEST_BYTES = 16
+
+
+def _sha256_digest(data: bytes) -> bytes:
+    return hashlib.sha256(data).digest()
 
 
 def _as_bytes(value: Element) -> bytes:
@@ -25,9 +32,21 @@ class BloomFilter:
     A filter instance is thread-safe: ``add``, ``contains``, and ``clear`` are
     linearizable. The configured ``error_rate`` is a target at ``capacity``,
     not a per-query guarantee.
+
+    ``digest`` is an advanced seam for tests: it must turn the UTF-8 element
+    bytes into at least 16 bytes and be safe to call concurrently. The default
+    is SHA-256. A different digest changes the bit pattern, so the
+    reproducibility promise only covers the default; production callers should
+    leave it alone.
     """
 
-    def __init__(self, capacity: int, error_rate: float) -> None:
+    def __init__(
+        self,
+        capacity: int,
+        error_rate: float,
+        *,
+        digest: DigestFunction = _sha256_digest,
+    ) -> None:
         if isinstance(capacity, bool) or not isinstance(capacity, int):
             raise TypeError("capacity must be an int")
         if capacity < 1:
@@ -36,10 +55,13 @@ class BloomFilter:
             raise TypeError("error_rate must be a float")
         if not 0.0 < float(error_rate) < 1.0:
             raise ValueError("error_rate must be between 0 and 1, exclusive")
+        if not callable(digest):
+            raise TypeError("digest must be callable")
 
         self._capacity = capacity
         self._error_rate = float(error_rate)
         self._seed = _SEED
+        self._digest = digest
         self._bit_count = max(
             1, math.ceil(-capacity * math.log(self._error_rate) / (math.log(2) ** 2))
         )
@@ -84,7 +106,11 @@ class BloomFilter:
         return count
 
     def _indices(self, data: bytes) -> tuple[int, ...]:
-        digest = hashlib.sha256(data).digest()
+        digest = self._digest(data)
+        if len(digest) < _MIN_DIGEST_BYTES:
+            raise ValueError(
+                f"digest must return at least {_MIN_DIGEST_BYTES} bytes, got {len(digest)}"
+            )
         h1 = int.from_bytes(digest[:8], "big") ^ self._seed
         h2 = (int.from_bytes(digest[8:16], "big") ^ self._seed) or 1
         return tuple((h1 + i * h2) % self._bit_count for i in range(self._hash_count))

@@ -4,8 +4,8 @@ from __future__ import annotations
 
 from typing import TYPE_CHECKING, Protocol
 
-from bugs.always_true import BloomFilter as AlwaysTrue
 from probloom import BloomFilter
+from tools.harness.bugs.always_true import BloomFilter as AlwaysTrue
 
 if TYPE_CHECKING:
     from collections.abc import Callable

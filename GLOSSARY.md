@@ -74,6 +74,14 @@ _Avoid_: assertion, property
 The code that turns an operation into a call on the Python library. Only the binding changes between transports.
 _Avoid_: client, adapter
 
+**Harness**:
+The development-only NDJSON process that exposes `reset`, `add`, `contains`, `clear`, and `stats` to the Accordant binding. It is not part of the published package.
+_Avoid_: client (when naming the contract), API
+
+**Digest function**:
+The callable that maps element bytes to at least 16 digest bytes. SHA-256 is the default; tests may inject one to pin bit positions or force collisions.
+_Avoid_: hasher (when naming the seam), hash
+
 **Profile**:
 The set of states the system could be in, threaded from one `Allows` call to the next. Not the Bloom filter's occupancy.
 _Avoid_: state, when more than one state is possible

@@ -1,0 +1,35 @@
+# serializer version: 1
+# name: test_filter_diagnostics_story
+  list([
+    dict({
+      'contains_alice': True,
+      'contains_bob': False,
+      'operation': 'add alice',
+      'set_bits': 7,
+    }),
+    dict({
+      'contains_alice': True,
+      'contains_bob': True,
+      'operation': 'add bob',
+      'set_bits': 14,
+    }),
+    dict({
+      'contains_alice': True,
+      'contains_bob': True,
+      'operation': 'add alice',
+      'set_bits': 14,
+    }),
+    dict({
+      'contains_alice': True,
+      'contains_bob': True,
+      'operation': 'add ghost',
+      'set_bits': 21,
+    }),
+    dict({
+      'contains_alice': False,
+      'contains_bob': False,
+      'operation': 'clear',
+      'set_bits': 0,
+    }),
+  ])
+# ---

@@ -6,5 +6,5 @@
 /scripts/ci @Tomperez98
 
 # The spec is the contract; changes need the owner's eyes.
-/spec/ @Tomperez98
+/tools/spec/ @Tomperez98
 /docs/adr/ @Tomperez98

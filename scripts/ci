@@ -6,6 +6,9 @@ cd "$(dirname "${BASH_SOURCE[0]}")/.."
 uv sync --dev --frozen
 uv run ruff check .
 uv run ruff format --check .
-uv run ty check --error-on-warning src tests bugs concurrency
+uv run ty check --error-on-warning src tests tools scripts
 uv run pytest
-dotnet test spec/Probloom.Spec.Tests/Probloom.Spec.Tests.csproj
+rm -rf dist
+uv build --out-dir dist
+uv run python scripts/check_wheel.py
+dotnet test tools/spec/Probloom.Spec.Tests/Probloom.Spec.Tests.csproj
