@@ -83,7 +83,7 @@ public sealed class ConcurrencySpecTests
         var startInfo = new ProcessStartInfo
         {
             FileName = "uv",
-            Arguments = $"run python concurrency/run_cases.py \"{casesPath}\" \"{tracesPath}\"",
+            Arguments = $"run python tools/harness/concurrency.py \"{casesPath}\" \"{tracesPath}\"",
             WorkingDirectory = TestPaths.RepoRoot,
             RedirectStandardOutput = true,
             RedirectStandardError = true,

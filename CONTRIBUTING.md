@@ -17,8 +17,8 @@ redirected to an issue.
 
 ## Set up
 
-Requires Python 3.14, [uv](https://docs.astral.sh/uv/), and the .NET SDK 10 for
-the Accordant suite.
+Requires Python 3.13 or newer, [uv](https://docs.astral.sh/uv/), and the .NET
+SDK 10 for the Accordant suite.
 
 ```bash
 uv sync --dev
@@ -26,8 +26,18 @@ uv sync --dev
 ```
 
 `./scripts/ci` runs `ruff check`, `ruff format --check`, `ty check`, `pytest`,
-and the .NET Accordant suite. CI runs the same script, so a green local run is
-the expected baseline.
+builds the wheel, verifies it has zero runtime dependencies and no harness
+files, then runs the .NET Accordant suite. CI runs the same script on Python
+3.13 and a smaller pytest job on 3.14, so a green local run is the expected
+baseline.
+
+## Published package
+
+`src/probloom/` is the entire published distribution. It must keep zero runtime
+dependencies: add development tools to `[dependency-groups].dev`, not
+`[project].dependencies`. The harness, seeded bugs, concurrency runner, and
+Accordant spec live under `tools/` and stay out of the wheel. `./scripts/ci`
+enforces both rules.
 
 ## Branches and commits
 
@@ -35,6 +45,9 @@ the expected baseline.
   `docs/<slug>`, `chore/<slug>`.
 - Keep PRs small and focused.
 - Reference the issue in the PR body: `Closes #<n>`.
+- If deterministic output changed, update snapshots with
+  `uv run pytest --snapshot-update -m syrupy_snapshot` and review the `.ambr`
+  diff before opening the PR.
 
 ## Pull requests
 

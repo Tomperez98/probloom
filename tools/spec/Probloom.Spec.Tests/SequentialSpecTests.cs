@@ -74,7 +74,7 @@ public sealed class SequentialSpecTests
     [Fact]
     public async Task Faulty_add_is_rejected()
     {
-        var results = await RunSuite("bugs.faulty_add");
+        var results = await RunSuite("tools.harness.bugs.faulty_add");
 
         Assert.Contains(results, result => !result.Success && HasMessage(
             result, "was inserted → contains must be true"));
@@ -83,7 +83,7 @@ public sealed class SequentialSpecTests
     [Fact]
     public async Task Faulty_clear_is_rejected()
     {
-        var results = await RunSuite("bugs.faulty_clear");
+        var results = await RunSuite("tools.harness.bugs.faulty_clear");
 
         Assert.Contains(results, result => !result.Success && HasMessage(
             result, "filter is empty → contains('alice') must be false"));
@@ -92,7 +92,7 @@ public sealed class SequentialSpecTests
     [Fact]
     public async Task Faulty_contains_is_rejected()
     {
-        var results = await RunSuite("bugs.faulty_contains");
+        var results = await RunSuite("tools.harness.bugs.faulty_contains");
 
         Assert.Contains(results, result => !result.Success && HasMessage(
             result, "was inserted → contains must be true"));
@@ -101,7 +101,7 @@ public sealed class SequentialSpecTests
     [Fact]
     public async Task Always_true_passes_the_spec()
     {
-        var results = await RunSuite("bugs.always_true");
+        var results = await RunSuite("tools.harness.bugs.always_true");
 
         Assert.All(results, result => Assert.True(result.Success, result.LastFailureMessage));
     }

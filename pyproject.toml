@@ -1,19 +1,47 @@
 [project]
 name = "probloom"
 version = "0.1.0"
-description = "A small, thread-safe Bloom filter with an Accordant spec"
+description = "A small, thread-safe Bloom filter with no runtime dependencies"
 readme = "README.md"
+license = "Apache-2.0"
+license-files = ["LICENSE"]
+requires-python = ">=3.13"
 authors = [
     { name = "Tomas Perez Alvarez", email = "tomasperezalvarez@gmail.com" }
 ]
-requires-python = ">=3.14"
-dependencies = [
-    "argbuilder>=2.0.1",
+keywords = [
+    "bloom filter",
+    "membership test",
+    "probabilistic data structure",
+    "set membership",
 ]
+classifiers = [
+    "Development Status :: 4 - Beta",
+    "Intended Audience :: Developers",
+    "Operating System :: OS Independent",
+    "Programming Language :: Python :: 3",
+    "Programming Language :: Python :: 3.13",
+    "Programming Language :: Python :: 3.14",
+    "Programming Language :: Python :: Implementation :: CPython",
+    "Topic :: Software Development :: Libraries :: Python Modules",
+    "Typing :: Typed",
+]
+dependencies = []
+
+[project.urls]
+Homepage = "https://github.com/Tomperez98/probloom"
+Repository = "https://github.com/Tomperez98/probloom"
+Issues = "https://github.com/Tomperez98/probloom/issues"
+Changelog = "https://github.com/Tomperez98/probloom/blob/main/CHANGELOG.md"
+Documentation = "https://github.com/Tomperez98/probloom#readme"
 
 [build-system]
 requires = ["uv_build>=0.13.5,<0.14.0"]
 build-backend = "uv_build"
+
+[tool.uv.build-backend]
+module-root = "src"
+module-name = "probloom"
 
 [tool.pytest.ini_options]
 pythonpath = ["."]
@@ -21,7 +49,10 @@ testpaths = ["tests"]
 
 [dependency-groups]
 dev = [
+    "argbuilder>=2.0.1",
+    "hypothesis>=6.140.0",
     "pytest>=9.2.0",
     "ruff>=0.17.3",
+    "syrupy>=6.1.1",
     "ty>=0.0.95",
 ]

@@ -17,6 +17,7 @@ Closes #
 
 - [ ] No secrets, tokens, or credentials in the diff
 - [ ] Docs or glossary updated if vocabulary changed
+- [ ] If packaging changed, the wheel still has zero runtime dependencies and no harness files (`./scripts/ci`)
 - [ ] The PR is squash-mergeable (linear history, one logical change)
 - [ ] I did not edit `.github/workflows/` or repository rules without maintainer approval
 

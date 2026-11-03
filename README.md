@@ -1,34 +1,37 @@
 # Probloom
 
-A small, thread-safe Bloom filter in Python, with an [Accordant](https://github.com/microsoft/accordant)
-spec that judges the membership contract and a Python trace runner that
-judges concurrency.
+A small, thread-safe Bloom filter in Python with **no runtime dependencies**.
 
-The point of the repository is not just the filter. It is the review workflow:
-the spec is short enough to read as the contract, the seeded bugs show which
-rule catches which failure, and the concurrency path shows a non-.NET system
-being checked by `AllowsConcurrent`.
-
-Requires Python 3.14 and [uv](https://docs.astral.sh/uv/); the Accordant suite additionally needs the .NET SDK 10.
-
-## Quick start
-
-```bash
-uv sync --dev
-uv run python -c "
+```python
 from probloom import BloomFilter
+
 f = BloomFilter(capacity=1000, error_rate=0.01)
-f.add('alice')
-assert 'alice' in f
-assert f.contains(b'alice')
+f.add("alice")
+assert "alice" in f
+assert f.contains(b"alice")
 f.clear()
-assert 'alice' not in f
-print('ok')
-"
-# prints: ok
+assert "alice" not in f
 ```
 
-## API
+Probloom stores membership in a fixed bit array: `false` means definitely
+absent, `true` means maybe present. It accepts `str` (UTF-8) and `bytes`,
+hashes with SHA-256 double hashing, and is thread-safe: `add`, `contains`, and
+`clear` are linearizable.
+
+## Install
+
+Requires Python 3.13 or newer.
+
+```bash
+pip install probloom
+# or
+uv add probloom
+```
+
+The published wheel contains only the filter and its type marker. It declares
+no runtime dependencies.
+
+## Use
 
 ```python
 from probloom import BloomFilter
@@ -38,6 +41,7 @@ f.add("alice")  # idempotent; accepts str or bytes
 f.contains("alice")  # True
 "alice" in f  # same as contains
 f.clear()  # back to the empty filter
+
 f.bit_count  # m, the number of bits
 f.hash_count  # k, the number of positions per element
 f.set_bits  # diagnostic: bits currently set
@@ -52,6 +56,26 @@ are linearizable.
 Insertion beyond `capacity` is allowed; the false-positive rate degrades. The
 configured `error_rate` is a target at capacity, not a per-query guarantee.
 
+### Test seam
+
+`BloomFilter` accepts an optional keyword-only `digest` callable. The default
+is SHA-256; tests can inject a digest to force collisions or pin bit positions
+without copying private state:
+
+```python
+def fixed_digest(_data: bytes) -> bytes:
+    return bytes(32)
+
+
+f = BloomFilter(1000, 0.01, digest=fixed_digest)
+f.add("alice")
+assert f.contains("bob")  # every element hashes to the same positions
+```
+
+A digest must return at least 16 bytes. Production callers should leave the
+default alone: the reproducible bit-pattern promise applies to SHA-256.
+See [ADR-0006](docs/adr/0006-injectable-digest-seam.md).
+
 ## Testing
 
 The one command CI runs:
@@ -60,26 +84,43 @@ The one command CI runs:
 ./scripts/ci
 ```
 
+It syncs the dev environment, lints, type-checks, runs the Python suite,
+builds the wheel, verifies the wheel has zero runtime dependencies and does not
+contain the harness, then runs the .NET Accordant suite.
+
 Individually:
 
 ```bash
 uv run ruff check .
 uv run ruff format --check .
-uv run ty check --error-on-warning src tests bugs concurrency
+uv run ty check --error-on-warning src tests tools scripts
 uv run pytest
-dotnet test spec/Probloom.Spec.Tests/Probloom.Spec.Tests.csproj
+uv build --out-dir dist
+uv run python scripts/check_wheel.py
+dotnet test tools/spec/Probloom.Spec.Tests/Probloom.Spec.Tests.csproj
 ```
 
-The Python suite covers parameter validation, sizing, determinism, the
-statistical false-positive rate, the thread-safe stress cases, and the CLI
-protocol. The Accordant suite covers the generated sequential cases, the
-seeded bugs, and the concurrent trace replay.
+The Python suite covers unit and property tests, the statistical false-positive
+rate, thread-safe stress cases, and the harness. Snapshot tests use
+[Syrupy](https://github.com/syrupy-project/syrupy) for deterministic filter
+diagnostics and harness transcripts. After an intentional output change, update
+and review the snapshots:
+
+```bash
+uv run pytest --snapshot-update -m syrupy_snapshot
+```
+
+The harness is split into `Harness` (request handling with an injectable filter
+factory) and `serve` (the line protocol with injectable text streams), so most
+harness tests run in-process; one subprocess test covers the module entrypoint.
+The Accordant suite covers generated sequential cases, the seeded bugs, and the
+concurrent trace replay.
 
 The harness's flag surface is built with
-[argbuilder](https://pypi.org/project/argbuilder/). `tests/test_cli.py` calls
-`cli().debug_assert()` and parses `--impl` through `try_get_matches_from`
-without starting a process, so a broken CLI definition fails in the test rather
-than in the binding.
+[argbuilder](https://pypi.org/project/argbuilder/), a dev-only dependency.
+`tests/harness/test_cli.py` calls `cli().debug_assert()` and parses `--impl`
+through `try_get_matches_from` without starting a process, so a broken CLI
+definition fails in the test rather than in the binding.
 
 ## Reading the showcase
 
@@ -90,28 +131,34 @@ Start with [`docs/accordant.md`](docs/accordant.md). It walks through:
   deliberately not an invariant;
 - why the spec models the abstract inserted-set and never the bit array;
 - the manual clear-cycle case the built-in generator cannot reach;
-- the three seeded bugs the spec rejects;
+- the seeded bugs the spec rejects;
 - `always_true`, the bug the spec must pass and the statistical test rejects;
 - the generated concurrent cases, the two pinned races, and the
   `AllowsConcurrent` replay.
 
 The contract itself lives in
-[`spec/Probloom.Spec.Tests/ProbloomSpec.cs`](spec/Probloom.Spec.Tests/ProbloomSpec.cs).
+[`tools/spec/Probloom.Spec.Tests/ProbloomSpec.cs`](tools/spec/Probloom.Spec.Tests/ProbloomSpec.cs).
 If the walkthrough and the spec disagree, the spec is right.
 
 ## Repository map
 
 ```
-src/probloom/filter.py              the filter
-src/probloom/cli.py                 NDJSON harness for the Accordant binding
-tests/                              Python unit, statistical, concurrency, CLI tests
-spec/Probloom.Spec.Tests/           Accordant spec, binding, sequential and concurrency tests
-concurrency/run_cases.py            executes generated concurrent cases, records traces
-bugs/                               deliberately wrong filters (not shipped)
+src/probloom/filter.py              the published filter
+src/probloom/__init__.py            public exports and metadata version
+tests/core/                         unit, property, statistical, concurrency tests
+tests/harness/                      in-process harness and entrypoint tests
+tools/harness/cli.py                NDJSON harness for the Accordant binding (not shipped)
+tools/harness/bugs/                 deliberately wrong filters (not shipped)
+tools/harness/concurrency.py        executes generated concurrent cases (not shipped)
+tools/spec/                         Accordant spec, binding, sequential and concurrency tests
 docs/accordant.md                   the reviewer walkthrough
+docs/releasing.md                   release checklist
 docs/adr/                           decisions that are hard to reverse
 GLOSSARY.md                         the canonical vocabulary
 ```
+
+The published distribution is only `src/probloom/`. Everything under `tools/`
+is development tooling and stays out of the wheel.
 
 ## Design notes
 
@@ -121,6 +168,10 @@ GLOSSARY.md                         the canonical vocabulary
 - [ADR-0003](docs/adr/0003-thread-safe-filter.md): a per-instance lock.
 - [ADR-0004](docs/adr/0004-concurrency-trace-validation.md): concurrency is
   validated by replaying Python traces.
+- [ADR-0005](docs/adr/0005-ship-only-the-filter.md): ship the filter only; keep
+  the harness and spec under `tools/`.
+- [ADR-0006](docs/adr/0006-injectable-digest-seam.md): an optional digest
+  callable is the test seam for bit positions.
 
 ## Scope
 
@@ -130,3 +181,7 @@ version; there is no wire format yet. Concurrency testing is positive-only:
 the project chose not to ship an unsynchronized seeded filter, so the replay
 proves the observed interleavings were linearizable, not that every possible
 interleaving is safe.
+
+## License
+
+Apache-2.0. See [`LICENSE`](LICENSE).

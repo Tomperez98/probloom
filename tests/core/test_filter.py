@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+import hashlib
 import math
 import subprocess
 import sys
@@ -148,6 +149,57 @@ def test_invalid_element_type() -> None:
 
 def test_repr() -> None:
     assert repr(BloomFilter(10, 0.5)) == "BloomFilter(capacity=10, error_rate=0.5)"
+
+
+def test_digest_seam_pins_the_derived_positions() -> None:
+    digest = bytes(range(32))
+    bloom = BloomFilter(1000, 0.01, digest=lambda _data: digest)
+
+    bloom.add("alice")
+
+    h1 = int.from_bytes(digest[:8], "big") ^ bloom.seed
+    h2 = (int.from_bytes(digest[8:16], "big") ^ bloom.seed) or 1
+    expected = {(h1 + i * h2) % bloom.bit_count for i in range(bloom.hash_count)}
+    assert bloom.set_bits == len(expected)
+
+
+def test_digest_seam_controls_the_bit_pattern() -> None:
+    def fixed_digest(_data: bytes) -> bytes:
+        return bytes(range(16)) + bytes(16)
+
+    bloom = BloomFilter(1000, 0.01, digest=fixed_digest)
+    bloom.add("alice")
+    before = bloom.set_bits
+
+    assert bloom.contains("bob")
+    bloom.add("bob")
+    assert bloom.set_bits == before
+
+
+def test_digest_receives_the_utf8_bytes_without_normalization() -> None:
+    seen: list[bytes] = []
+
+    def recording_digest(data: bytes) -> bytes:
+        seen.append(data)
+        return hashlib.sha256(data).digest()
+
+    bloom = BloomFilter(1000, 0.000001, digest=recording_digest)
+    bloom.add("\u00e9")
+    bloom.contains(b"\xc3\xa9")
+
+    assert seen == ["\u00e9".encode(), "\u00e9".encode()]
+
+
+def test_short_digest_is_rejected() -> None:
+    bloom = BloomFilter(10, 0.5, digest=lambda _data: b"too short")
+
+    with pytest.raises(ValueError, match="at least 16 bytes"):
+        bloom.add("alice")
+
+
+def test_digest_must_be_callable() -> None:
+    with pytest.raises(TypeError, match="digest must be callable"):
+        BloomFilter(10, 0.5, digest=None)  # ty: ignore[invalid-argument-type]
 
 
 def test_hashing_is_deterministic_across_processes() -> None:

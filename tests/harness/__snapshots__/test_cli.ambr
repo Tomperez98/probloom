@@ -1,0 +1,83 @@
+# serializer version: 1
+# name: test_harness_error_snapshot
+  list([
+    dict({
+      'error': dict({
+        'message': 'reset must be the first operation',
+        'type': 'RuntimeError',
+      }),
+      'id': 1,
+      'ok': False,
+    }),
+    dict({
+      'error': dict({
+        'message': 'capacity must be at least 1',
+        'type': 'ValueError',
+      }),
+      'id': 2,
+      'ok': False,
+    }),
+    dict({
+      'id': 3,
+      'ok': True,
+    }),
+    dict({
+      'error': dict({
+        'message': "unknown operation: 'unknown'",
+        'type': 'ValueError',
+      }),
+      'id': 4,
+      'ok': False,
+    }),
+  ])
+# ---
+# name: test_harness_transcript_snapshot
+  list([
+    dict({
+      'id': 1,
+      'ok': True,
+    }),
+    dict({
+      'id': 2,
+      'ok': True,
+    }),
+    dict({
+      'id': 3,
+      'ok': True,
+    }),
+    dict({
+      'id': 4,
+      'ok': True,
+      'value': True,
+    }),
+    dict({
+      'id': 5,
+      'ok': True,
+      'value': False,
+    }),
+    dict({
+      'bit_count': 614,
+      'capacity': 64,
+      'error_rate': 0.01,
+      'hash_count': 7,
+      'id': 6,
+      'ok': True,
+      'seed': 0,
+      'set_bits': 14,
+    }),
+    dict({
+      'id': 7,
+      'ok': True,
+    }),
+    dict({
+      'bit_count': 614,
+      'capacity': 64,
+      'error_rate': 0.01,
+      'hash_count': 7,
+      'id': 8,
+      'ok': True,
+      'seed': 0,
+      'set_bits': 0,
+    }),
+  ])
+# ---

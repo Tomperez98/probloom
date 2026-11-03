@@ -14,7 +14,7 @@ public sealed class CliRunner : IDisposable
 
     public CliRunner(string? impl = null)
     {
-        var arguments = "run python -m probloom.cli";
+        var arguments = "run python -m tools.harness.cli";
         if (!string.IsNullOrWhiteSpace(impl))
         {
             arguments += $" --impl {impl}";

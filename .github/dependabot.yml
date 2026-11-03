@@ -13,7 +13,7 @@ updates:
     open-pull-requests-limit: 5
 
   - package-ecosystem: "nuget"
-    directory: "/spec/Probloom.Spec.Tests"
+    directory: "/tools/spec/Probloom.Spec.Tests"
     schedule:
       interval: "weekly"
     open-pull-requests-limit: 5
